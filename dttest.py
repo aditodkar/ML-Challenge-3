@@ -1,3 +1,4 @@
+# impoting libraries
 import pandas as pd
 import datetime
 from sklearn.grid_search import GridSearchCV
@@ -17,13 +18,14 @@ train['week_of_year']=train['datetime'].dt.week
 train['dayofweek']=train['datetime'].dt.dayofweek
 train['time']=train['datetime'].dt.time
 
+# converting datetime to string type
 train['datetime']=train.datetime.apply(str)
-
 Night = datetime.datetime.strptime('00:00:00', '%H:%M:%S').time()
 Morning = datetime.datetime.strptime('06:00:00', '%H:%M:%S').time()
 afternoon = datetime.datetime.strptime('12:00:00', '%H:%M:%S').time()
 Evening = datetime.datetime.strptime('18:00:00', '%H:%M:%S').time() 
 
+# creating series to generate state of the day
 train.loc[(train.time >= Morning) & (train.time < afternoon), ['datetime']] = 'M' 
 train.loc[(train.time >= afternoon) & (train.time < Evening), ['datetime']] = 'A' 
 train.loc[(train.time >= Evening) & (train.time <= datetime.datetime.strptime('23:59:59', '%H:%M:%S').time()), ['datetime']] = 'E' 
@@ -47,6 +49,7 @@ train.loc[train.browserid == 'Google Chrome', ['browserid']] = 'Chrome'
 #browserid        50162
 #devid           149817
 
+# setting null value of devid to mobile as the mobile is most widely used device for browsing
 print 'dealing with null values'
 train['devid']=train['devid'].fillna('Mobile')
 
@@ -68,6 +71,8 @@ print 'creating independent_var and dependent_var'
 independent_var = ['datetime', 'siteid', 'offerid', 'category', 'merchant', 'countrycode', 'browserid', 'devid', 'day', 'week_of_year' ,'dayofweek']
 dependent_var = 'click'
 
+################################################################################3
+# performing label encoding to string type
 categorical_variables=['datetime', 'countrycode', 'browserid' , 'devid']
 le=LabelEncoder()
 for var in categorical_variables:
@@ -75,13 +80,15 @@ for var in categorical_variables:
 
 print train.info()
 
-
+################################################################################
+# fitting the model
 model=DecisionTreeClassifier(max_features =10, max_depth=7, criterion='entropy', splitter='best')
 model.fit(train[independent_var],train[dependent_var])
 
 del train
 
 #################################################################################################################
+# Applying the same convertions to the test dataset
 ##################################################################################################################
 
 print 'fetching data'
@@ -171,18 +178,3 @@ writer.writerow(['ID', 'click'])
 
 for i in range(len(target)):
 	writer.writerow([target[i], output[i][1]])	
-
-'''
-# gridsearch cv
-print '/ngridsearch cv'
-param_test1={'max_features':[10]}
-model=GridSearchCV(estimator=DecisionTreeClassifier(max_depth=7, criterion='entropy', splitter='best') , param_grid=param_test1, scoring='roc_auc', n_jobs=4, iid=False,cv=5,verbose=True)
-model.fit(train[independent_var],train[dependent_var])
-for i in model.grid_scores_:
-	print i
-
-print model.best_params_
-print model.best_score_
-'''
-
-#estimator=DecisionTreeClassifier(max_features =10, max_depth=7, criterion='entropy', splitter='best')
